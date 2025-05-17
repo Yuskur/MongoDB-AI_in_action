@@ -16,7 +16,7 @@ CORS(app, origins=["http://localhost:3000"])
 
 df = pd.read_csv("student-mental-health.csv")
 
-# Clean the data replacing values like yes and no with 1 and 0
+# ======================================================== DATA CLEANING =======================================================
 df[[
     "Do you have Depression?", 
     "Do you have Anxiety?", 
@@ -26,7 +26,26 @@ df[[
     "Do you have Depression?",
     "Do you have Anxiety?", 
     "Do you have Panic attack?", 
-    "Did you seek any specialist for a treatment?"]].replace({"Yes": 1, "No": 0})
+    "Did you seek any specialist for a treatment?"]].map({"Yes": 1, "No": 0})
+
+#Set gender columns to lowercase (I found some male and Male)
+df["Choose your gender"] = df["Choose your gender"].str.lower()
+df["Choose your gender"] = df["Choose your gender"].map({"male": 1, "female": 0})
+
+#Change the name of Choose your gender column to gender for simplicity
+df.rename(columns={"Choose your gender", "Gender"}, inplace=True)
+
+df["Your current year of Study"] = df["Your current year of Study"].str.lower()
+df["Your current year of Study"] = df["Your current year of Study"].map({
+    "year 1": 1,
+    "year 2": 2,
+    "year 3": 3,
+    "year 4": 4,
+})
+
+df["What is your CGPA?"] = df["What is your CGPA?"].map({
+    ''
+})
 
 # We don't really need time stamps for the model so we will remove it
 df.drop(columns=["Timestamp"], inplace=True)
@@ -51,9 +70,8 @@ logistic = Logistic(df, "Mental health risk")
 # Train the knn model
 # ---------------------- knn train ----------------------
 
-print("API KEY: " + os.getenv("GEMINI_API_KEY"))
 
-# Set up the Gemini API
+# ======================================================== GEMINI SETUP =======================================================
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Initialize the model
