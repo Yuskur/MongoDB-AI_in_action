@@ -41,7 +41,7 @@ class Logistic:
     """
     def predict(self, new_data: pd.DataFrame):
         # check if there is a trained model
-        if self.model is None:
+        if not self.is_trained(self):
             raise Exception("No Model trained yet!!!")
         
         # check if the new data has the same columns as the training data
@@ -55,7 +55,7 @@ class Logistic:
     """
     def score(self):
         # check if there is a trained model
-        if self.model is None:
+        if not self.is_trained(self):
             raise Exception("No Model trained yet!!!")
         
         return self.model.score(self.X, self.y)
