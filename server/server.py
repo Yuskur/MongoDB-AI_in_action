@@ -3,7 +3,11 @@ import pandas as pd
 import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import google.generativeai as genai
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 app = Flask(__name__)
 port = 5000
 
@@ -25,7 +29,7 @@ df[[
     "Did you seek any specialist for a treatment?"]].replace({"Yes": 1, "No": 0})
 
 # We don't really need time stamps for the model so we will remove it
-df.drop(columns=["Timestamp"])
+df.drop(columns=["Timestamp"], inplace=True)
 
 # Add a new column called "Mental health risk" that is 1 if any mh columns are 1 and 0 if not
 df["Mental health risk"] = df[[
@@ -43,9 +47,23 @@ logistic = Logistic(df, "Mental health risk")
 """
 
 # Train the logistic regression model
-logistic.train()
+# logistic.train()
 # Train the knn model
 # ---------------------- knn train ----------------------
+
+print("API KEY: " + os.getenv("GEMINI_API_KEY"))
+
+# Set up the Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Initialize the model
+model = genai.GenerativeModel('gemini-2.0-flash')
+
+# Generate content
+response = model.generate_content("List the US bill of rights")
+print(response.text)
+
+# ======================================================= API ENDPOINTS =======================================================
 
 
 # run the server on port 5000
