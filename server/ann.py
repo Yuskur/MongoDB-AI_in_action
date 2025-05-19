@@ -13,11 +13,7 @@ import joblib
 import os
 
 class MentalHealthANN:
-    """
-    ANN model for binary classification of mental health risk.
-    :param df: DataFrame containing the training data
-    :param target: The target variable to predict
-    """
+  
     def __init__(self, df: pd.DataFrame = None, target: str = 'Mental_Health_Issue'):
         self.df = df
         self.target = target
@@ -31,7 +27,6 @@ class MentalHealthANN:
             self.preprocess_data()
 
     def preprocess_data(self):
-        """Enhanced data preprocessing with validation"""
         # Validate required columns
         required_cols = ['Choose your gender', 'What is your course?', 'Your current year of Study',
                         'What is your CGPA?', 'Do you have Depression?', 'Do you have Anxiety?',
@@ -105,7 +100,6 @@ class MentalHealthANN:
         print(f"Class distribution:\n{self.y.value_counts()}")
 
     def plot_correlation_heatmap(self):
-        """Generate correlation heatmap for dashboard"""
         if self.X is None or self.y is None:
             raise ValueError("Data not preprocessed. Call preprocess_data() first.")
         corr_matrix = self.df[['Gender', 'Age', 'Major', 'Year', 'GPA', self.target]].corr()
@@ -117,7 +111,6 @@ class MentalHealthANN:
         plt.close()
 
     def is_trained(self):
-        """Check if the model is trained"""
         if self.model is None:
             return False
         try:
@@ -128,7 +121,6 @@ class MentalHealthANN:
             return False
 
     def train(self, max_iter=3000):
-        """Train with SMOTE and evaluate"""
         if self.X is None or self.y is None:
             self.preprocess_data()
 
@@ -188,10 +180,8 @@ class MentalHealthANN:
         return self.model
 
     def predict_from_dict(self, input_data: dict):
-        """Predict with proper DataFrame structure"""
         if not self.is_trained():
             raise Exception("Model not trained. Call train() first.")
-
         try:
             # Prepare input DataFrame with column names
             major = str(input_data.get('major', 'STEM')).lower()
@@ -219,25 +209,22 @@ class MentalHealthANN:
             return None
 
     def predict(self, new_data: pd.DataFrame):
-        """Predict for new DataFrame"""
         if not self.is_trained():
-            raise Exception("No Model trained yet!!!")
+            raise Exception("No Model trained yet!")
         if not all(col in self.X.columns for col in new_data.columns):
-            raise Exception("Missing columns in new data!!!")
+            raise Exception("Missing columns in new data!")
         return self.model.predict(new_data)
 
     def predict_proba(self, new_data: pd.DataFrame):
-        """Predict probability for new DataFrame"""
         if not self.is_trained():
-            raise Exception("No Model trained yet!!!")
+            raise Exception("No Model trained yet!")
         if not all(col in self.X.columns for col in new_data.columns):
-            raise Exception("Missing columns in new data!!!")
+            raise Exception("Missing columns in new data!")
         return self.model.predict_proba(new_data)[:, 1]
 
     def score(self):
-        """Return mean accuracy on training data"""
         if not self.is_trained():
-            raise Exception("No Model trained yet!!!")
+            raise Exception("No Model trained yet!")
         return self.model.score(self.X, self.y)
 
 if __name__ == "__main__":
