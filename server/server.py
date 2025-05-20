@@ -6,6 +6,10 @@ from flask_cors import CORS
 import google.generativeai as genai
 from dotenv import load_dotenv
 from utils import clean_data
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+import signal
+import sys
 import os
 
 load_dotenv()
@@ -39,10 +43,23 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Generate content [This is a test]
-response = model.generate_content("List the US bill of rights")
-print(response.text)
+# response = model.generate_content("List the US bill of rights")
+# print(response.text)
 
 
+# ======================================================== MONGODB SETUP =======================================================
+
+uri = f"mongodb+srv://{os.getenv("MONGODB_USER")}:{os.getenv("MONGODB_PASSWORD")}@cluster0.7n0fjh3.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+# Create a new client and connect to the server
+client = MongoClient(uri, server_api=ServerApi('1'))
+
+# Send a ping to confirm a successful connection
+try:
+    client.admin.command('ping')
+    print("Pinged your deployment. You successfully connected to MongoDB!")
+except Exception as e:
+    print(e)
 
 # ======================================================= API ENDPOINTS =======================================================
 
