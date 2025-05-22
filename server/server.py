@@ -24,7 +24,7 @@ df = clean_data()
 print(df.head())
 
 # Initialize the logistic regression model
-logistic = Logistic(df, "Mental health risk")
+# logistic = Logistic(df, "Mental health risk")
 """
     Initialize the knn model
     ================== KNN class instance =====================
@@ -43,8 +43,8 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Generate content [This is a test]
-# response = model.generate_content("List the US bill of rights")
-# print(response.text)
+response = model.generate_content("List the US bill of rights")
+print(response.text)
 
 
 # ======================================================== MONGODB SETUP =======================================================
@@ -61,7 +61,9 @@ try:
 except Exception as e:
     print(e)
 
+
 # ======================================================= API ENDPOINTS =======================================================
+
 
 
 
