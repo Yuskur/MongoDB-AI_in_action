@@ -5,6 +5,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
 from imblearn.over_sampling import SMOTE
 import matplotlib.pyplot as plt
@@ -13,7 +14,6 @@ import joblib
 import os
 
 class MentalHealthANN:
-  
     def __init__(self, df: pd.DataFrame = None, target: str = 'Mental_Health_Issue'):
         self.df = df
         self.target = target
@@ -28,9 +28,14 @@ class MentalHealthANN:
 
     def preprocess_data(self):
         # Validate required columns
-        required_cols = ['Choose your gender', 'What is your course?', 'Your current year of Study',
-                        'What is your CGPA?', 'Do you have Depression?', 'Do you have Anxiety?',
-                        'Do you have Panic attack?', 'Age']
+        required_cols = [
+            'Age', 'Course', 'Gender', 'CGPA', 'Stress_Level', 'Depression_Score',
+            'Anxiety_Score', 'Sleep_Quality', 'Physical_Activity', 'Diet_Quality',
+            'Social_Support', 'Relationship_Status', 'Substance_Use',
+            'Counseling_Service_Use', 'Family_History', 'Chronic_Illness',
+            'Financial_Stress', 'Extracurricular_Involvement', 'Semester_Credit_Load',
+            'Residence_Type'
+        ]
         missing_cols = [col for col in required_cols if col not in self.df.columns]
         if missing_cols:
             raise ValueError(f"Missing columns in dataset: {missing_cols}")
@@ -38,76 +43,85 @@ class MentalHealthANN:
         # Create target variable
         try:
             self.df[self.target] = (
-                (self.df['Do you have Depression?'] == 'Yes').astype(int) |
-                (self.df['Do you have Anxiety?'] == 'Yes').astype(int) |
-                (self.df['Do you have Panic attack?'] == 'Yes').astype(int)
+                (self.df['Depression_Score'] >= 3).astype(int) |
+                (self.df['Anxiety_Score'] >= 3).astype(int) |
+                (self.df['Stress_Level'] >= 3).astype(int)
             )
         except KeyError as e:
             raise ValueError(f"Error creating target variable: {str(e)}")
 
-        # Handle missing Age
-        self.df['Age'] = pd.to_numeric(self.df['Age'], errors='coerce').fillna(self.df['Age'].median())
+        # Initialize processed DataFrame
+        processed_data = pd.DataFrame(index=self.df.index)
 
-        # Encode categorical features
-        try:
-            self.label_encoders['gender'] = LabelEncoder()
-            self.df['Gender'] = self.label_encoders['gender'].fit_transform(
-                self.df['Choose your gender'].str.lower().fillna('unknown'))
-        except Exception as e:
-            raise ValueError(f"Error encoding Gender: {str(e)}")
+        # Handle numerical features
+        numerical_cols = [
+            'Age', 'CGPA', 'Stress_Level', 'Depression_Score', 'Anxiety_Score',
+            'Semester_Credit_Load'
+        ]
+        imputer = SimpleImputer(strategy='median')
+        numerical_data = pd.DataFrame(
+            imputer.fit_transform(self.df[numerical_cols]),
+            columns=numerical_cols,
+            index=self.df.index
+        )
+        processed_data = processed_data.join(numerical_data)
 
-        # Group majors to reduce sparsity
-        stem_majors = ['engineering', 'bit', 'bcs', 'it', 'biomedical science', 'marine science',
-                       'biotechnology', 'radiography', 'nursing', 'cts', 'koe', 'engin', 'engine']
-        social_majors = ['psychology', 'human sciences', 'laws', 'law', 'communication', 'islamic education',
-                         'pendidikan islam', 'usuluddin', 'fiqh', 'fiqh fatwa', 'human resources',
-                         'business administration', 'banking studies', 'econs', 'diploma tesl']
-        try:
-            self.df['Major_Group'] = self.df['What is your course?'].str.lower().apply(
-                lambda x: 'STEM' if isinstance(x, str) and any(m in x.lower() for m in stem_majors) else
-                          'Social Sciences' if isinstance(x, str) and any(m in x.lower() for m in social_majors) else 'Other')
-            self.label_encoders['major'] = LabelEncoder()
-            self.df['Major'] = self.label_encoders['major'].fit_transform(self.df['Major_Group'])
-        except Exception as e:
-            raise ValueError(f"Error encoding Major: {str(e)}")
-
-        # Extract year number and convert to float
-        try:
-            self.df['Year'] = self.df['Your current year of Study'].str.lower().str.extract(r'(\d+)').astype(float).fillna(1.0)
-        except Exception as e:
-            raise ValueError(f"Error processing Year: {str(e)}")
-
-        # Convert GPA ranges to numerical values
-        gpa_map = {
-            '0 - 1.99': 1.0, '2.00 - 2.49': 2.25, '2.50 - 2.99': 2.75,
-            '3.00 - 3.49': 3.25, '3.50 - 4.00': 3.75
+        # Handle categorical features with ordinal encoding
+        categorical_cols = [
+            'Gender', 'Course', 'Sleep_Quality', 'Physical_Activity', 'Diet_Quality',
+            'Social_Support', 'Relationship_Status', 'Substance_Use',
+            'Counseling_Service_Use', 'Family_History', 'Chronic_Illness',
+            'Residence_Type', 'Financial_Stress', 'Extracurricular_Involvement'
+        ]
+        ordinal_mappings = {
+            'Financial_Stress': {'unknown': 0, 'low': 0, 'moderate': 1, 'high': 2},
+            'Extracurricular_Involvement': {'unknown': 0, 'low': 0, 'moderate': 1, 'high': 2},
+            'Sleep_Quality': {'unknown': 0, 'poor': 0, 'average': 1, 'good': 2},
+            'Physical_Activity': {'unknown': 0, 'low': 0, 'moderate': 1, 'high': 2},
+            'Diet_Quality': {'unknown': 0, 'poor': 0, 'average': 1, 'good': 2},
+            'Social_Support': {'unknown': 0, 'low': 0, 'moderate': 1, 'high': 2}
         }
-        try:
-            self.df['GPA'] = self.df['What is your CGPA?'].map(gpa_map).fillna(3.0)
-        except Exception as e:
-            raise ValueError(f"Error processing GPA: {str(e)}")
+        for col in categorical_cols:
+            try:
+                self.df[col] = self.df[col].replace(['', ' ', None, np.nan], 'unknown').astype(str).str.lower()
+                if col in ordinal_mappings:
+                    processed_data[col] = self.df[col].map(ordinal_mappings[col]).fillna(0).astype(int)
+                else:
+                    self.label_encoders[col] = LabelEncoder()
+                    processed_data[col] = self.label_encoders[col].fit_transform(self.df[col])
+            except Exception as e:
+                raise ValueError(f"Error encoding {col}: {str(e)}")
 
-        # Select features and handle missing values
-        features = ['Gender', 'Age', 'Major', 'Year', 'GPA']
+        # Validate column lengths
+        for col in processed_data.columns:
+            if len(processed_data[col]) != len(self.df):
+                raise ValueError(f"Column {col} has {len(processed_data[col])} samples, expected {len(self.df)}")
+
+        # Select features and ensure no NaNs
+        features = numerical_cols + categorical_cols
         try:
-            self.df[features] = self.df[features].fillna(self.df[features].mean())
-            self.X = self.df[features]
+            self.X = processed_data[features]
             self.y = self.df[self.target]
+            if self.X.isna().any().any():
+                raise ValueError("NaN values remain in features after preprocessing")
+            if len(self.X) != len(self.y):
+                raise ValueError(f"X has {len(self.X)} samples, y has {len(self.y)} samples")
         except KeyError as e:
             raise ValueError(f"Error selecting features: {str(e)}")
 
         print(f"Dataset size: {self.X.shape[0]} samples")
-        print(f"Class distribution:\n{self.y.value_counts()}")
+        print(f"Class distribution:\n{self.y.value_counts(normalize=True)}")
 
     def plot_correlation_heatmap(self):
         if self.X is None or self.y is None:
             raise ValueError("Data not preprocessed. Call preprocess_data() first.")
-        corr_matrix = self.df[['Gender', 'Age', 'Major', 'Year', 'GPA', self.target]].corr()
-        plt.figure(figsize=(8, 6))
+        corr_cols = ['Age', 'CGPA', 'Stress_Level', 'Depression_Score', 'Anxiety_Score', self.target]
+        corr_matrix = pd.concat([self.X[corr_cols[:-1]], self.y], axis=1).corr()
+        plt.figure(figsize=(10, 8))
         sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1, center=0)
-        plt.title('Correlation Heatmap: Mental Health and Features')
+        plt.title('Correlation Heatmap: Mental Health and Key Features')
         plt.tight_layout()
-        plt.savefig('heatmap.png')
+        plt.savefig('server/heatmap.png')
         plt.close()
 
     def is_trained(self):
@@ -128,16 +142,18 @@ class MentalHealthANN:
             self.X, self.y, test_size=0.3, random_state=42, stratify=self.y)
 
         # Handle class imbalance with SMOTE
-        smote = SMOTE(random_state=42, k_neighbors=3)  # Reduced k_neighbors for small dataset
+        minority_count = min(y_train.value_counts())
+        k_neighbors = min(5, minority_count - 1) if minority_count > 1 else 1
+        smote = SMOTE(random_state=42, k_neighbors=k_neighbors)
         X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
 
         pipeline = Pipeline([
             ('scaler', StandardScaler()),
             ('mlp', MLPClassifier(
-                hidden_layer_sizes=(10, 5),  # Reduced to prevent overfitting
+                hidden_layer_sizes=(20, 10),
                 activation='relu',
                 solver='adam',
-                alpha=0.01,  # Stronger regularization
+                alpha=0.001,
                 learning_rate='adaptive',
                 max_iter=max_iter,
                 random_state=42,
@@ -154,7 +170,7 @@ class MentalHealthANN:
         y_pred = pipeline.predict(X_test)
         print(f"\nAccuracy: {accuracy_score(y_test, y_pred):.2f}")
         print("\nClassification Report:")
-        print(classification_report(y_test, y_pred))
+        print(classification_report(y_test, y_pred, zero_division=0))
 
         # Cross-validation
         cv_scores = cross_val_score(pipeline, self.X, self.y, cv=5, scoring='recall_macro')
@@ -167,7 +183,7 @@ class MentalHealthANN:
                     xticklabels=['No Issue', 'Has Issue'],
                     yticklabels=['No Issue', 'Has Issue'])
         plt.title('Confusion Matrix')
-        plt.savefig('confusion_matrix.png')
+        plt.savefig('server/confusion_matrix.png')
         plt.close()
 
         # Feature importance
@@ -182,20 +198,31 @@ class MentalHealthANN:
     def predict_from_dict(self, input_data: dict):
         if not self.is_trained():
             raise Exception("Model not trained. Call train() first.")
-        try:
-            # Prepare input DataFrame with column names
-            major = str(input_data.get('major', 'STEM')).lower()
-            if major not in self.label_encoders['major'].classes_:
-                major = 'STEM'  # Fallback to a known category
-            input_df = pd.DataFrame([{
-                'Gender': self.label_encoders['gender'].transform(
-                    [str(input_data.get('gender', 'Male')).lower()])[0],
-                'Age': float(input_data.get('age', 20)),
-                'Major': self.label_encoders['major'].transform([major])[0],
-                'Year': float(input_data.get('year', 2)),
-                'GPA': float(input_data.get('gpa', 3.5))
-            }], columns=['Gender', 'Age', 'Major', 'Year', 'GPA'])
 
+        try:
+            input_dict = {}
+            for col in self.X.columns:
+                if col in self.label_encoders:
+                    val = str(input_data.get(col.lower(), 'unknown')).lower()
+                    if val not in self.label_encoders[col].classes_:
+                        val = 'unknown'
+                    input_dict[col] = self.label_encoders[col].transform([val])[0]
+                elif col in ['Financial_Stress', 'Extracurricular_Involvement', 'Sleep_Quality',
+                            'Physical_Activity', 'Diet_Quality', 'Social_Support']:
+                    mapping = {
+                        'Financial_Stress': {'unknown': 0, 'low': 0, 'moderate': 1, 'high': 2},
+                        'Extracurricular_Involvement': {'unknown': 0, 'low': 0, 'moderate': 1, 'high': 2},
+                        'Sleep_Quality': {'unknown': 0, 'poor': 0, 'average': 1, 'good': 2},
+                        'Physical_Activity': {'unknown': 0, 'low': 0, 'moderate': 1, 'high': 2},
+                        'Diet_Quality': {'unknown': 0, 'poor': 0, 'average': 1, 'good': 2},
+                        'Social_Support': {'unknown': 0, 'low': 0, 'moderate': 1, 'high': 2}
+                    }[col]
+                    val = str(input_data.get(col.lower(), 'unknown')).lower()
+                    input_dict[col] = mapping.get(val, 0)
+                else:
+                    input_dict[col] = float(input_data.get(col.lower(), self.X[col].median()))
+
+            input_df = pd.DataFrame([input_dict], columns=self.X.columns)
             proba = self.model.predict_proba(input_df)[0]
             prediction = int(self.model.predict(input_df)[0])
 
@@ -210,27 +237,27 @@ class MentalHealthANN:
 
     def predict(self, new_data: pd.DataFrame):
         if not self.is_trained():
-            raise Exception("No Model trained yet!")
+            raise Exception("No Model trained yet")
         if not all(col in self.X.columns for col in new_data.columns):
-            raise Exception("Missing columns in new data!")
+            raise Exception("Missing columns in new data")
         return self.model.predict(new_data)
 
     def predict_proba(self, new_data: pd.DataFrame):
         if not self.is_trained():
-            raise Exception("No Model trained yet!")
+            raise Exception("No Model trained yet")
         if not all(col in self.X.columns for col in new_data.columns):
-            raise Exception("Missing columns in new data!")
+            raise Exception("Missing columns in new data")
         return self.model.predict_proba(new_data)[:, 1]
 
     def score(self):
         if not self.is_trained():
-            raise Exception("No Model trained yet!")
+            raise Exception("No Model trained yet")
         return self.model.score(self.X, self.y)
 
 if __name__ == "__main__":
     try:
         # Load data
-        csv_path = os.path.join(os.path.dirname(__file__), 'student-mental-health.csv')
+        csv_path = os.path.join(os.path.dirname(__file__), 'students_mental_health_survey.csv')
         df = pd.read_csv(csv_path)
 
         # Initialize and preprocess
@@ -246,9 +273,24 @@ if __name__ == "__main__":
         result = ann.predict_from_dict({
             'gender': 'Female',
             'age': 20,
-            'major': 'Engineering',
-            'year': 2,
-            'gpa': 3.25
+            'course': 'Engineering',
+            'cgpa': 3.25,
+            'stress_level': 2,
+            'depression_score': 1,
+            'anxiety_score': 1,
+            'sleep_quality': 'Good',
+            'physical_activity': 'Moderate',
+            'diet_quality': 'Average',
+            'social_support': 'Moderate',
+            'relationship_status': 'Single',
+            'substance_use': 'Never',
+            'counseling_service_use': 'Never',
+            'family_history': 'No',
+            'chronic_illness': 'No',
+            'financial_stress': 'Moderate',
+            'extracurricular_involvement': 'Moderate',
+            'semester_credit_load': 20,
+            'residence_type': 'Off-Campus'
         })
 
         if result:
