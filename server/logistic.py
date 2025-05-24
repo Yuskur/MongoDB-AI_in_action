@@ -51,7 +51,6 @@ class Logistic:
             self.model = LogisticRegression(**best_params)
             self.model.fit(self.X, self.y)
 
-            print(f"Model mean performance: {self.cross_validation()}")
         else: 
             # check if the model is already trained
             raise Exception("Model already trained!!!")

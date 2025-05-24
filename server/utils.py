@@ -6,53 +6,87 @@ from sklearn.model_selection import train_test_split, GridSearchCV, KFold
 from sklearn.metrics import accuracy_score
 
 def clean_data():
-    df = pd.read_csv("student-mental-health.csv")
+    df = pd.read_csv("students_mental_health_survey.csv")
 
     #Set gender columns to lowercase (I found some male and Male)
     df["Gender"] = df["Gender"].str.lower()
-    df["Gender"] = df["gender"].replace({"male": 1, "female": 0})
+    df["Gender"] = df["Gender"].replace({"male": 1, "female": 0})
 
-    # get the avg of the student gpa
+    # get the avg of the student gpa and fill the empty values with it
     df["CGPA"].replace("", np.nan, inplace=True)
     df["CGPA"].fillna(df["CGPA"].astype(float).mean(), inplace=True)
 
-
-    df["Marital status"] = df["Marital status"].str.lower()
-    df["Marital status"] = df["Marital status"].replace({"yes": 1, "no": 0})
+    df["Relationship_Status"] = df["Relationship_Status"].str.lower()
+    df["Relationship_Status"] = df["Relationship_Status"].replace({"yes": 1, "no": 0})
 
 
     # get integer based majors
-
-    df["Course"] = df["Course"].str.lower()
-
     #Hot encode the course column
-    df = pd.get_dummies(df, columns=["Course"], prefix="course", drop_first=True)
+    df["Course"] = df["Course"].str.lower()
+    df = pd.get_dummies(df, columns=["Course"], prefix="course", drop_first=False)
 
+    #Hot encode the sleep quality column
+    df["Sleep_Quality"] = df["Sleep_Quality"].str.lower()
+    df = pd.get_dummies(df, columns=["Sleep_Quality"], prefix="sleep_quality", drop_first=False)
 
-    # change mental health stats to 1 and 0
-    df[[
-        "Do you have Depression?", 
-        "Do you have Anxiety?", 
-        "Do you have Panic attack?", 
-        "Did you seek any specialist for a treatment?"
-    ]] = df[[
-        "Do you have Depression?",
-        "Do you have Anxiety?", 
-        "Do you have Panic attack?", 
-        "Did you seek any specialist for a treatment?"]].replace({"Yes": 1, "No": 0})
+    #Hot encode the Pysical activity column
+    df["Physical_Activity"] = df["Physical_Activity"].str.lower()
+    df = pd.get_dummies(df, columns=["Physical_Activity"], prefix="physical_activity", drop_first=False)
+
+    #Hot encode the Diet quality column
+    df["Diet_Quality"] = df["Diet_Quality"].str.lower()
+    df = pd.get_dummies(df, columns=["Diet_Quality"], prefix="diet_quality", drop_first=False)
+
+    #Hot encode the Soclial support column
+    df["Social_Support"] = df["Social_Support"].str.lower()
+    df = pd.get_dummies(df, columns=["Social_Support"], prefix="social_support", drop_first=False)
+
+    #Hot encode the Relationship status column
+    df["Relationship_Status"] = df["Relationship_Status"].str.lower()
+    df = pd.get_dummies(df, columns=["Relationship_Status"], prefix="relationship_status", drop_first=False)
+
+    #Hot encode the Substance use column
+    df["Substance_Use"] = df["Substance_Use"].str.lower()
+    df = pd.get_dummies(df, columns=["Substance_Use"], prefix="substance_use", drop_first=False)
+
+    #Hot encode the Counseling service use column
+    df["Counseling_Service_Use"] = df["Counseling_Service_Use"].str.lower()
+    df = pd.get_dummies(df, columns=["Counseling_Service_Use"], prefix="counseling_service_use", drop_first=False)
+
+    #Hot encode the Fmily history column
+    # df["Family_History"] = df["Family_History"].str.lower()
+    # df = pd.get_dummies(df, columns=["Family_History"], prefix="family_history", drop_first=False)
+
+    #Map the Family history column to 1 and 0
+    df["Family_History"] = df["Family_History"].str.lower()
+    df["Family_History"] = df["Family_History"].replace({"yes": 1, "no": 0})
+
+    #Map Choronic illness to 1 and 0
+    df["Chronic_Illness"] = df["Chronic_Illness"].str.lower()
+    df["Chronic_Illness"] = df["Chronic_Illness"].replace({"yes": 1, "no": 0})
+
+    #Hot encode Extracurricular Involvement column
+    df["Extracurricular_Involvement"] = df["Extracurricular_Involvement"].str.lower()
+    df = pd.get_dummies(df, columns=["Extracurricular_Involvement"], prefix="extracurricular_involvement", drop_first=False)
+
+    #Hot encode Residence type column
+    df["Residence_Type"] = df["Residence_Type"].str.lower()
+    df = pd.get_dummies(df, columns=["Residence_Type"], prefix="residence_type", drop_first=False)
+
+    """
+        We consider a student to be at risk of mental health issues if they have a score of 3 or more in any one of the following categories:
+        - Stress Score
+        - Depression Score
+        - Anxiety Score
+    """
+
+    #Mental health label
+    stress_label = df["Stress_Level"] >= 3
+    depression_label = df["Depression_Score"] >= 3
+    anxiety_label = df["Anxiety_Score"] >= 3
+
+    df["Mental_Health_Risk"] = (stress_label | depression_label | anxiety_label).astype(int)
     
-
-    # We don't really need time stamps for the model so we will remove it
-    df.drop(columns=["Timestamp"], inplace=True)
-
-    # Add a new column called "Mental health risk" that is 1 if any mh columns are 1 and 0 if not
-    df["Mental health risk"] = df[[
-        "Do you have Depression?", 
-        "Do you have Anxiety?", 
-        "Do you have Panic attack?", 
-        "Did you seek any specialist for a treatment?"
-    ]].any(axis=1).replace({True: 1, False: 0})
-
     return df
 
 def split_data(X, y, test_size=0.2):
@@ -80,15 +114,16 @@ def train_model(model: Logistic, X, y):
     X_train, X_test, y_train, y_test = split_data(X, y)
     model.train()
 
+# We evaluate our models here using cross validation
 def main():
     df = clean_data()
-    X = df.drop(columns=["Mental health risk"])
-    y = df["Mental health risk"]
+    X = df.drop(columns=["Mental_Health_Risk"])
+    y = df["Mental_Health_Risk"]
     
     X_train, X_test, y_train, y_test = split_data(X, y)
-    model = Logistic(X_train, y_train, "Mental health risk")
+    model = Logistic(X_train, y_train, "Mental_Health_Risk")
     model.train()
-    print(f"Model mean performance: {cross_validation(model.model, X, y)}")
+    print(f"\n|\n|\n|\nv\nModel mean performance: {cross_validation(model.model, X, y)}")
 
 if(__name__ == "__main__"):
     main()
