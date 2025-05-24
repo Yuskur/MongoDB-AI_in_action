@@ -53,10 +53,6 @@ def clean_data():
     df["Counseling_Service_Use"] = df["Counseling_Service_Use"].str.lower()
     df = pd.get_dummies(df, columns=["Counseling_Service_Use"], prefix="counseling_service_use", drop_first=False)
 
-    #Hot encode the Fmily history column
-    # df["Family_History"] = df["Family_History"].str.lower()
-    # df = pd.get_dummies(df, columns=["Family_History"], prefix="family_history", drop_first=False)
-
     #Map the Family history column to 1 and 0
     df["Family_History"] = df["Family_History"].str.lower()
     df["Family_History"] = df["Family_History"].replace({"yes": 1, "no": 0})
