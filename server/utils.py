@@ -5,6 +5,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, GridSearchCV, KFold
 from sklearn.metrics import accuracy_score
 
+
+# ========================================================= Data Cleaning =======================================================
 def clean_data():
     df = pd.read_csv("students_mental_health_survey.csv")
 
@@ -82,9 +84,12 @@ def clean_data():
     anxiety_label = df["Anxiety_Score"] >= 3
 
     df["Mental_Health_Risk"] = (stress_label | depression_label | anxiety_label).astype(int)
+
+    df = df.drop(columns=["Stress_Level", "Depression_Score", "Anxiety_Score"])
     
     return df
 
+# ========================================================= Model Training =======================================================
 def split_data(X, y, test_size=0.2):
     # split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
@@ -110,6 +115,16 @@ def train_model(model: Logistic, X, y):
     X_train, X_test, y_train, y_test = split_data(X, y)
     model.train()
 
+# ========================================================== Utility Functions =======================================================
+
+def vectorize_data(text: str):
+    
+    return text
+
+
+
+
+# =========================================================== Main File Function =======================================================
 # We evaluate our models here using cross validation
 def main():
     df = clean_data()
@@ -120,6 +135,8 @@ def main():
     model = Logistic(X_train, y_train, "Mental_Health_Risk")
     model.train()
     print(f"\n|\n|\n|\nv\nModel mean performance: {cross_validation(model.model, X, y)}")
+    print(f"Model accuracy: {model.score()}")
+    print(f"Model params: {model.get_best_params()}")
 
 if(__name__ == "__main__"):
     main()

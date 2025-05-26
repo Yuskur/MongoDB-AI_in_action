@@ -34,10 +34,11 @@ class Logistic:
 
     def get_best_params(self):
         param_grid = {
-            'C': [.001, 0.01, 0.1, 1],
-            'penalty': ['l2'],
+            'C': [.0001, .001, 0.01, 0.1, 1, 10, 100],
+            'penalty': ['l1', 'l2'],
             'solver': ['liblinear'],
-            'max_iter': [100, 200]
+            'max_iter': [100, 200],
+            'random_state': [42]
         }
 
         grid = GridSearchCV(self.model, param_grid, cv=5, scoring='accuracy')
@@ -50,6 +51,7 @@ class Logistic:
             best_params, best_score = self.get_best_params()
             self.model = LogisticRegression(**best_params)
             self.model.fit(self.X, self.y)
+
 
         else: 
             # check if the model is already trained
