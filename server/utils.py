@@ -4,6 +4,7 @@ from logistic import Logistic
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, GridSearchCV, KFold
 from sklearn.metrics import accuracy_score
+from vertexai.language_models import TextEmbeddingModel, TextEmbeddingInput
 
 
 # ========================================================= Data Cleaning =======================================================
@@ -117,9 +118,51 @@ def train_model(model: Logistic, X, y):
 
 # ========================================================== Utility Functions =======================================================
 
-def vectorize_data(text: str):
-    
-    return text
+def vectorize_text(text, task_type, model, title=None, output_dimensionality=384):
+
+    text_embedding_input = TextEmbeddingInput(
+        task_type=task_type, title=title, text=text
+    )
+
+    kwargs = (
+        dict(output_dimensionality=output_dimensionality)
+        if output_dimensionality
+        else {}
+    )
+
+    try:
+
+        embeddings = model.get_embeddings([text_embedding_input], **kwargs)
+    except Exception as e:
+        print(f"Error generating embeddings: {e}")
+        return None
+
+    return embeddings[0].values
+
+"""
+    Take a row of the DataFrame as json format and generate a text description of the student for text vectorization model.
+"""
+def generate_text(row):
+    text = f"""
+        This student is {row["Age"]} years old.
+        This student is {row["Gender"]}.
+        This student has a CGPA of {row["CGPA"]}.
+        This student has a family history of mental health issues: {row["Family_History"]}.
+        This student has a chronic illness: {row["Chronic_Illness"]}.
+        This student has a stress level of {row["Stress_Level"]}.
+        This student has a depression score of {row["Depression_Score"]}.
+        This student has an anxiety score of {row["Anxiety_Score"]}.
+        This student is in a relationship: {row["Relationship_Status"]}.
+        This student has social support: {row["Social_Support"]}.
+        This student has a physical activity level of {row["Physical_Activity"]}.
+        This student has a diet quality of {row["Diet_Quality"]}.
+        This student has a sleep quality of {row["Sleep_Quality"]}.
+        This student has a substance use level of {row["Substance_Use"]}.
+        This student has used counseling services: {row["Counseling_Service_Use"]}.
+        This student is involved in extracurricular activities: {row["Extracurricular_Involvement"]}.
+        This student lives in a {row["Residence_Type"]} residence.
+        """
+    return text.strip()
 
 
 

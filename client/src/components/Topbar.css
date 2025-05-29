@@ -1,0 +1,30 @@
+.topbar-container {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 2rem;
+  background-color: white;
+  border-bottom: 2px solid #ddd;
+  margin: 0 100px 0 100px
+}
+
+.topbar-container .nav-item {
+  margin: 0 1rem;
+}
+
+.topbar-container .nav-link {
+  color: black;
+  font-weight: bold;
+  transition: all 0.2s ease-in-out;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+}
+
+.topbar-container .nav-link.active {
+  background-color: black;
+  color: white;
+}
+
+.topbar-container .nav-link:hover {
+  background-color: #efefef;
+  color: black;
+}
