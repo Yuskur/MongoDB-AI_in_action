@@ -3,8 +3,8 @@ import numpy as np
 from logistic import Logistic
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, GridSearchCV, KFold
-from sklearn.metrics import accuracy_score
-from vertexai.language_models import TextEmbeddingModel, TextEmbeddingInput
+from sklearn.metrics import accuracy_score, precision_score, classification_report
+from vertexai.language_models import TextEmbeddingInput
 
 
 # ========================================================= Data Cleaning =======================================================
@@ -21,7 +21,6 @@ def clean_data():
 
     df["Relationship_Status"] = df["Relationship_Status"].str.lower()
     df["Relationship_Status"] = df["Relationship_Status"].replace({"yes": 1, "no": 0})
-
 
     # get integer based majors
     #Hot encode the course column
@@ -85,7 +84,6 @@ def clean_data():
     anxiety_label = df["Anxiety_Score"] >= 3
 
     df["Mental_Health_Risk"] = (stress_label | depression_label | anxiety_label).astype(int)
-
     df = df.drop(columns=["Stress_Level", "Depression_Score", "Anxiety_Score"])
     
     return df
@@ -162,7 +160,7 @@ def generate_text(row):
         This student is involved in extracurricular activities: {row["Extracurricular_Involvement"]}.
         This student lives in a {row["Residence_Type"]} residence.
         """
-    return text.strip()
+    return text
 
 
 
@@ -175,11 +173,21 @@ def main():
     y = df["Mental_Health_Risk"]
     
     X_train, X_test, y_train, y_test = split_data(X, y)
-    model = Logistic(X_train, y_train, "Mental_Health_Risk")
-    model.train()
-    print(f"\n|\n|\n|\nv\nModel mean performance: {cross_validation(model.model, X, y)}")
-    print(f"Model accuracy: {model.score()}")
-    print(f"Model params: {model.get_best_params()}")
+    logistic = Logistic(X_train, y_train, "Mental_Health_Risk")
+    logistic.train()
+
+    y_pred = logistic.model.predict(X_test)
+
+    print("|\n|\n|\n|\n|\n|\n|\nv")
+    print(f"Cross-validation score: {cross_validation(logistic.model, X_train, y_train)}")
+    print(f"Training accuracy: {logistic.score()}")
+    print(f"Percision score: {precision_score(y_test, y_pred)}")
+    print(f"{classification_report(y_test, y_pred)}")
+    
+    # Most importantly - evaluate on unseen test data
+    test_accuracy = logistic.model.score(X_test, y_test)
+    print(f"Test accuracy: {test_accuracy}")
+    print(y.value_counts(normalize=True))
 
 if(__name__ == "__main__"):
     main()

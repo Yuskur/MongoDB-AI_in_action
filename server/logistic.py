@@ -5,11 +5,6 @@ from sklearn.model_selection import train_test_split, GridSearchCV, KFold
 from sklearn.metrics import accuracy_score
 
 class Logistic:
-    learning_rate = None
-    target = None
-    model = None
-    X = None
-    y = None
 
     """
         Logistic regression model for binary classification of mental health risk.
@@ -79,3 +74,4 @@ class Logistic:
         if not self.is_trained():
             raise Exception("No Model trained yet!!!")
         return self.model.score(self.X, self.y)
+    

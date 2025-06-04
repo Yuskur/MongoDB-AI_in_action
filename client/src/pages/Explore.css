@@ -57,6 +57,7 @@ th{
     background-color: #efefef;
     color: black;
     cursor: pointer;
+    border: 1px solid black;
 }
 
 #submit{

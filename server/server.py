@@ -89,7 +89,7 @@ for index, row in df.iterrows():
 # print(f"Embedding for sample text: {embedding_model_response[0].values}")
 
 
-# ======================================================== MONGODB SETUP =======================================================
+# ======================================================== MONGODB SETUP ======================================================= MAKE NEW EMBEDDINGS !!!!!
 """
     MongoDB is storing the AI generated vector embeddings of the student mental health survey data
 """
@@ -177,7 +177,7 @@ def query():
                     "path": "embedding",
                     "queryVector": vectorized_query,
                     "numCandidates": 1000,
-                    "limit": 50
+                    "limit": 200
                 }
             },
             {

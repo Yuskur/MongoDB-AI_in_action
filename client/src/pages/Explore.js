@@ -1,7 +1,8 @@
-import {React, useState} from "react";
+import {React, useState, useEffect} from "react";
 import './Explore.css';
 import Table from 'react-bootstrap/Table';
 import { motion, AnimatePresence } from 'framer-motion';
+import Spinner from 'react-bootstrap/Spinner';
 
 const Explore = () => {
     const columnGroups = [
@@ -14,15 +15,24 @@ const Explore = () => {
     const [currentGroup, setCurrentGroup] = useState(0);
     const columnsToShow = columnGroups[currentGroup];
     const [direction, setDirection] = useState(-1);
+
+    const [isLoading, setLoading] = useState(false);
     
     // Query taken from the user
     const [query, setQuery] = useState('');
     
     // Storing data
     const [data, setData] = useState([]);
+
+    useEffect(() => {
+        const savedQueryData = localStorage.getItem("saved-query-data");
+        if(savedQueryData){
+            setData(JSON.parse(savedQueryData));
+        }
+    }, [])
     
     const getQueryData = () => {
-        console.log("CLIENT: Making api request to find similar records")
+        setLoading(true);
         fetch('http://127.0.0.1:5000/api/query', {
             method: 'POST',
             headers: {
@@ -32,11 +42,14 @@ const Explore = () => {
             credentials: 'include'
         }).then(response => {
             if(response.ok){
-                return response.json()
+                setQuery('');
+                return response.json();
             }
         }).then(data => {
-            setData(data.map(entry => JSON.parse(entry.record)))
-            setQuery('')
+            const queryData = data.map(entry => JSON.parse(entry.record));
+            setData(queryData);
+            localStorage.setItem("saved-query-data", JSON.stringify(queryData));
+            setLoading(false);
         }).catch(error => console.error(error))
     }
 
@@ -56,7 +69,7 @@ const Explore = () => {
                     >
                     Prev
                     </button>
-                    <span>Group {currentGroup + 1} of {columnGroups.length}</span>
+                    <span>Page {currentGroup + 1} of {columnGroups.length}</span>
                     <button
                         className="page-button"
                         variant="none"
@@ -98,16 +111,25 @@ const Explore = () => {
             </div>
         );
     }
+
+    function Loading(){
+        return(
+            <Spinner animation="border" role="status">
+                <span className="visually-hidden">Loading...</span>
+            </Spinner>
+        );
+    }
     
     return(
         <div className="explore-container">
             <div className="content-container">
-                <QueryTable/>
+                {isLoading ? <Loading /> : <QueryTable/>}
             </div>
             <div className="query-bar">
                 <textarea 
                     placeholder="Type your query..." 
                     className="query-input"
+                    value={query}
                     onChange={(change) => setQuery(change.target.value)}
                 />
                 <button 

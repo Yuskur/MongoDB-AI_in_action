@@ -4,7 +4,7 @@
   padding: 1rem 2rem;
   background-color: white;
   border-bottom: 2px solid #ddd;
-  margin: 0 100px 0 100px
+  margin: 0 100px 0 100px;
 }
 
 .topbar-container .nav-item {
@@ -22,6 +22,7 @@
 .topbar-container .nav-link.active {
   background-color: black;
   color: white;
+  border: 1px solid black;
 }
 
 .topbar-container .nav-link:hover {
