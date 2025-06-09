@@ -79,8 +79,11 @@ except Exception as e:
 #Test the embedding model
 sample_text = "This is a 24 year old student who is struggling with crippling anxiety and depression!"
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 5a3d20c (.)
 # print(vectorize_text(sample_text, task_type="RETRIEVAL_DOCUMENT", title="Student Mental Health Survey", output_dimensionality=384))
 
 # embedding_model_response = model.get_embeddings([sample_text])
