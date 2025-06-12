@@ -20,7 +20,7 @@ load_dotenv()
 app = Flask(__name__)
 port = 5000
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/kaush/MongoDB-AI_in_action/server/vertex-ai-keys.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/yisakor2/Desktop/MongoDB-AI_in_action/server/vertex-ai-keys.json"
 
 #ONly allow requests from localhost:3000
 CORS(app, resources={
@@ -79,11 +79,6 @@ except Exception as e:
 #Test the embedding model
 sample_text = "This is a 24 year old student who is struggling with crippling anxiety and depression!"
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 5a3d20c (.)
 # print(vectorize_text(sample_text, task_type="RETRIEVAL_DOCUMENT", title="Student Mental Health Survey", output_dimensionality=384))
 
 # embedding_model_response = model.get_embeddings([sample_text])

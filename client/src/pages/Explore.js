@@ -1,20 +1,48 @@
-import {React, useState, useEffect} from "react";
+import React, {useState, useEffect, memo, useMemo} from "react";
 import './Explore.css';
 import Table from 'react-bootstrap/Table';
 import { motion, AnimatePresence } from 'framer-motion';
 import Spinner from 'react-bootstrap/Spinner';
 
+const columnGroups = [
+    ['Age', 'Course', 'Gender', 'CGPA', 'Stress_Level', 'Depression_Score'],
+    ['Anxiety_Score', 'Sleep_Quality', 'Physical_Activity', 'Diet_Quality', 'Social_Support'],
+    ['Relationship_Status', 'Substance_Use', 'Counseling_Service_Use', 'Family_History', 'Chronic_Illness'],
+    ['Financial_Stress', 'Extracurricular_Involvement', 'Semester_Credit_Load', 'Residence_Type'],
+];
+
+const AnimatedTable = memo(({ currentGroup, direction, columnsToShow, data }) => {
+    return(
+        <motion.div
+            key={currentGroup}
+            initial={{ x: direction * 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -direction * 100, opacity: 0 }}
+            transition={{ duration: 0.08 }}
+        >
+            <Table striped bordered hover responsive>
+                <thead>
+                    <tr>
+                        {columnsToShow.map(col => <th key={col}>{col}</th>)}
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map((record, index) => (
+                    <tr className="record" key={index}>
+                        {columnsToShow.map(col => <td key={col}>{record[col]}</td>)}
+                    </tr>
+                    ))}
+                </tbody>
+            </Table>
+        </motion.div>
+    );
+})
+
 const Explore = () => {
-    const columnGroups = [
-        ['Age', 'Course', 'Gender', 'CGPA', 'Stress_Level', 'Depression_Score'],
-        ['Anxiety_Score', 'Sleep_Quality', 'Physical_Activity', 'Diet_Quality', 'Social_Support'],
-        ['Relationship_Status', 'Substance_Use', 'Counseling_Service_Use', 'Family_History', 'Chronic_Illness'],
-        ['Financial_Stress', 'Extracurricular_Involvement', 'Semester_Credit_Load', 'Residence_Type'],
-    ];
 
     const [currentGroup, setCurrentGroup] = useState(0);
-    const columnsToShow = columnGroups[currentGroup];
-    const [direction, setDirection] = useState(-1);
+    const columnsToShow = useMemo(() => columnGroups[currentGroup], [currentGroup]);
+    const [direction, setDirection] = useState(0);
 
     const [isLoading, setLoading] = useState(false);
     
@@ -53,6 +81,11 @@ const Explore = () => {
         }).catch(error => console.error(error))
     }
 
+    const navigateToGroup = (newGroup, dir) => {
+        setDirection(dir);
+        setCurrentGroup(newGroup);
+    };
+
     function QueryTable(){
         return(
             <div>
@@ -83,31 +116,12 @@ const Explore = () => {
                     Next 
                     </button>
                 </div>
-
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={currentGroup}
-                        initial={{ x: direction * 100, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: -direction * 100, opacity: 0 }}
-                        transition={{ duration: 0.05 }}
-                    >
-                        <Table striped bordered hover responsive>
-                            <thead>
-                                <tr>
-                                    {columnsToShow.map(col => <th key={col}>{col}</th>)}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data.map((record, index) => (
-                                <tr className="record" key={index}>
-                                    {columnsToShow.map(col => <td key={col}>{record[col]}</td>)}
-                                </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                    </motion.div>
-                </AnimatePresence>
+                <AnimatedTable
+                    currentGroup={currentGroup}
+                    direction={direction}
+                    columnsToShow={columnsToShow}
+                    data={data}
+                />
             </div>
         );
     }
@@ -130,7 +144,14 @@ const Explore = () => {
                     placeholder="Type your query..." 
                     className="query-input"
                     value={query}
-                    onChange={(change) => setQuery(change.target.value)}
+                    onChange={(change) => {
+                        setQuery(change.target.value)
+                        setDirection(0); }}
+                    onKeyDown={(e) => {
+                        if(e.key === 'Enter' && !e.shiftKey){
+                            getQueryData()
+                        }
+                    }}
                 />
                 <button 
                 className="page-button" 
