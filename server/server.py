@@ -20,7 +20,8 @@ load_dotenv()
 app = Flask(__name__)
 port = 5000
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/kaush/MongoDB-AI_in_action/server/vertex-ai-keys.json"
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
 #ONly allow requests from localhost:3000
 CORS(app, resources={
     r"/api/*": {
