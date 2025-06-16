@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
 from dotenv import load_dotenv
-from utils import clean_data, split_data, vectorize_text, generate_text
+from utils import clean_data, split_data, vectorize_text, generate_text, predict, get_model_df, fix_columns
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 import vertexai
@@ -38,15 +38,11 @@ df = clean_data()
 print(df.head())
 
 # Initialize the logistic regression model
-X = df.drop(columns=["Mental_Health_Risk"])
-y = df["Mental_Health_Risk"]
-logistic = Logistic(X, y, "Mental_Health_Risk")
-
-# Train the logistic regression model
-# logistic.train()
-# Train the knn model
-# ---------------------- knn train ----------------------
-
+X = df.drop(columns=["mental_health_risk"])
+y = df["mental_health_risk"]
+X_train, X_test, y_train, y_test = split_data(X, y)
+logistic = Logistic(X_train, y_train, "mental_health_risk")
+logistic.train()
 
 # ======================================================== GEMINI SETUP =======================================================
 
@@ -140,12 +136,21 @@ except Exception as e:
 
 # ======================================================= API ENDPOINTS =======================================================
 
-@app.route('/api/predict', methods=['POST'])
-def predict():
-    data = request.get_json()
-    df = pd.DataFrame(data)
+@app.route('/api/predict-mental-health', methods=['POST'])
+def predict_mental_health():
+    try:
+        print("Entered prediction endpoint")
+        data = request.get_json()
 
-    return
+        model_df = get_model_df()
+        input_df = fix_columns(model_df.copy(), data)
+        prediction = predict(logistic, input_df)
+
+        return jsonify({"prediction": int(prediction[0])}), 200
+    except Exception as e:
+        logging.exception("Prediction failed")
+        return jsonify({"error": "Internal Error"}), 500
+
 
 @app.route('/api/query', methods=['POST'])
 def query():

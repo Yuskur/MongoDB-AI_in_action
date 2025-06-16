@@ -59,11 +59,9 @@ class Logistic:
     def predict(self, new_data: pd.DataFrame):
         # check if there is a trained model
         if not self.is_trained():
-            raise Exception("No Model trained yet!!!")
+            raise Exception("\n\n\n MODEL ERROR: No Model trained yet!!!\n\n\n")
         
         # check if the new data has the same columns as the training data
-        if not all(col in self.X.columns for col in new_data.columns):
-            raise Exception("Missing columns in new data!!!")
         return self.model.predict(new_data)
     
     """
