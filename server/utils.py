@@ -220,8 +220,8 @@ def fix_columns(df: pd.DataFrame, new_data: dict):
 # We evaluate our models here using cross validation
 def main():
     df = clean_data()
-    X = df.drop(columns=["Mental_Health_Risk"])
-    y = df["Mental_Health_Risk"]
+    X = df.drop(columns=["mental_health_risk"])
+    y = df["mental_health_risk"]
     
     X_train, X_test, y_train, y_test = split_data(X, y)
     logistic = Logistic(X_train, y_train, "mental_health_risk")

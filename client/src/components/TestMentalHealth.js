@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./TestMentalHealth.css";
 import CloseButton from 'react-bootstrap/CloseButton';
 import Form from 'react-bootstrap/Form';
@@ -26,6 +26,30 @@ function TestMentalHealth(props) {
     const [credits, setCredits] = useState("");
     const [residence, setResidence] = useState("");
     const [validated, setValidated] = useState(false);
+
+    useEffect(() => {
+        if (props.trigger) {
+            setAge("");
+            setCourse("");
+            setGender("");
+            setCgpa("");
+            setStress("");
+            setSleep("");
+            setActivity("");
+            setDiet("");
+            setSupport("");
+            setRelationship("");
+            setSubstance("");
+            setCounseling("");
+            setFamilyHistory("");
+            setIllness("");
+            setFinancial("");
+            setExtracurricular("");
+            setCredits("");
+            setResidence("");
+            setValidated(false);
+        }
+    }, [props.trigger]);
 
     const handleTryClick = async() => {
         try{
@@ -95,7 +119,7 @@ function TestMentalHealth(props) {
                 className="close-button"
                 onClick={() => { 
                     props.setTrigger(false)
-                    setValidated(true);
+                    setValidated(false);
                     localStorage.removeItem("to-understand");
                 }}
             />
